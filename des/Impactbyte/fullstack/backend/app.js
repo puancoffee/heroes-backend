@@ -6,13 +6,16 @@ var logger = require('morgan');
 const mongoose = require('mongoose')
 const cors = require('cors')
 require('dotenv').config()
+const jwt = require('jsonwebtoken')
+const privateKey = 'akusukakeju'
 
 var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
+var usersRouter = require('./routes/Users');
 const HeroesRouter = require('./routes/HeroesRouter')
+const CountryRouter = require('./routes/Country')
 
 var app = express();
-mongodConnect = process.env.DB_CONNECTION
+mongodConnect = process.env.DB_LOCAL
 mongoose.connect(mongodConnect, {
   useNewUrlParser: true,
   useUnifiedTopology: true
@@ -29,6 +32,21 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
-app.use('/heroes', HeroesRouter)
+app.use('/heroes',validateUser, HeroesRouter)
+app.use('/country',validateUser, CountryRouter)
+
+function validateUser(req, res, next) {
+  jwt.verify(req.headers['x-access-token'], privateKey, (err, decoded) =>{
+    console.log(decoded);
+    
+    if (err) {
+      res.json(err);
+    }else{
+      req.body.userId = decoded.id;
+      next();
+    }
+  });
+  
+}
 
 module.exports = app;
